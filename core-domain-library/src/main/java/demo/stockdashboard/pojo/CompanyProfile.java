@@ -16,6 +16,7 @@ public class CompanyProfile {
 	private ObjectId id;
 	
 	private String symbol;
+	
 	private String companyName;
 	private String exchange;
 	private String securityName;

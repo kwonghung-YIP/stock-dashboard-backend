@@ -1,8 +1,12 @@
 package org.hung.iexcloud;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import javax.annotation.PostConstruct;
 
 import org.hung.iexcloud.pojo.IEXCompany;
+import org.hung.iexcloud.pojo.IEXHistoricalPrice;
 import org.hung.iexcloud.pojo.DelayedQuote;
 import org.hung.iexcloud.pojo.IEXIntradayPrice;
 import org.hung.iexcloud.pojo.IEXPrevious;
@@ -107,10 +111,38 @@ public class IEXApiWrapper {
 		return body.block();
 	}
 	
-	public IEXIntradayPrice[] intradayPrices(String symbol) {
+	public IEXHistoricalPrice[] historicalPrice(String symbol,LocalDate exactDate) {
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<String,String>();
+		params.add("token", apiToken);
+		params.add("chartByDay", "true");
+		params.add("exactDate", exactDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+		
+		
+		Mono<IEXHistoricalPrice[]> body = webclient
+		  .get()
+		  .uri((urlBuilder) -> {
+			return urlBuilder
+				.path("/stock/{symbol}/chart")
+				.queryParams(params)
+			    .build(symbol);
+		  })
+		  .retrieve()
+		  .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+			  log.error("Error when get delayedQuote",clientResponse);
+			  return Mono.error(new Exception(clientResponse.toString()));
+		  })
+		  .bodyToMono(IEXHistoricalPrice[].class);
+
+		return body.block();		
+	}
+	
+	public IEXIntradayPrice[] intradayPrices(String symbol,LocalDate exactDate) {
 		MultiValueMap<String, String> params = new LinkedMultiValueMap<String,String>();
 		params.add("token", apiToken);
 		params.add("chartIEXOnly", "true");
+		if (exactDate!=null) {
+			params.add("exactDate", exactDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+		}
 		
 		
 		Mono<IEXIntradayPrice[]> body = webclient

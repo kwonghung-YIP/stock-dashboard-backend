@@ -19,8 +19,8 @@ public class StockQuoteRouter {
 		return RouterFunctions.route()
 			.GET("/company", handler::company)
 			.GET("/previous", handler::previous)
-			.GET("/intraday", handler::intraday)
-			.GET("/quote-simulate", handler::quote)
+			.GET("/intraday-demo", handler::intradayDemo)
+			.GET("/quote-demo", handler::realTimeQuoteDemo)
 			.build();
 		
 	}

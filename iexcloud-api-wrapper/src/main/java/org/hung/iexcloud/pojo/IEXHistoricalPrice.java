@@ -2,31 +2,30 @@ package org.hung.iexcloud.pojo;
 
 import java.time.LocalDate;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-
 import lombok.Data;
 
 @Data
-public class IEXPrevious {
+public class IEXHistoricalPrice {
 
-	private String symbol;
-	
-	@JsonFormat(pattern = "yyyy-MM-dd")
+	//The API Reference
+	//https://iexcloud.io/docs/api/#historical-prices
 	private LocalDate date;
 	
 	private Float open;
-	private Float close;
 	private Float high;
 	private Float low;
+	private Float close;
 	private Long volume;
+	
 	private Float uOpen;
-	private Float uClose;
 	private Float uHigh;
 	private Float uLow;
+	private Float uClose;
 	private Long uVolume;
+	
+	private String currency;
+	private String label;
 	private Float change;
 	private Float changePercent;
 	private Float changeOverTime;
-	
-	
 }
