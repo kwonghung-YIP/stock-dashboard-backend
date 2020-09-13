@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import demo.stockdashboard.pojo.CompanyProfile;
+import demo.stockdashboard.pojo.IntradayChartData;
 import demo.stockdashboard.pojo.IntradayPrice;
 import demo.stockdashboard.pojo.PreviousQuote;
 import demo.stockdashboard.pojo.Quote;
@@ -108,9 +110,69 @@ public class StockQuoteHandler {
 	
 	}
 	
-	public Mono<ServerResponse> intradayDemo(ServerRequest request) {
+	public Mono<ServerResponse> intradayInitDemo(ServerRequest request) {
 		Optional<String> optSymbol = request.queryParam("symbol");
 		Optional<String> optDate = request.queryParam("date");
+		
+		if (optSymbol.isEmpty()) {
+			return ServerResponse
+					.status(HttpStatus.BAD_REQUEST)
+					.bodyValue("parameter symbol is missing");
+		}
+		
+		LocalDate date = null;
+		if (optDate.isEmpty()) {
+			return ServerResponse
+					.status(HttpStatus.BAD_REQUEST)
+					.bodyValue("either date or since parameter should be provided");
+		} else {
+			try {
+				date = LocalDate.parse(optDate.get(),DateTimeFormatter.ISO_LOCAL_DATE);
+			} catch (DateTimeParseException e) {
+				return ServerResponse
+						.status(HttpStatus.BAD_REQUEST)
+						.bodyValue("invalid format for date parameter '" + optDate.get() + "', should be in yyyy-mm-dd format");				
+			}			
+		}
+		
+		String symbol = optSymbol.get().toLowerCase();
+		
+		Query prevQuery = query(where("symbol").is(symbol).and("date").lt(date)).with(Sort.by(Order.desc("date"))).limit(1);
+		
+		PreviousQuote previous = template.findOne(prevQuery, PreviousQuote.class, "previous");
+		
+		if (previous==null) {
+			return ServerResponse
+					.status(HttpStatus.NOT_FOUND)
+					.bodyValue("cannot find previous closing price for [" + symbol + "] on [" + date + "]");
+		}
+		
+		LocalDateTime from = LocalDateTime.of(date, LocalTime.of(9,30));
+		LocalTime now = LocalTime.now();
+		int interval = (now.getMinute()*60 + now.getSecond())%600;
+		long mins = (long)Math.ceil((390d/600d)*interval);
+		LocalDateTime to = from.plusMinutes(mins);
+		
+		//log.info("{} : {} - {}",symbol,from,to);
+		
+		Query query = query(where("symbol").is(symbol).and("timestamp").gte(from).lte(to)).with(Sort.by(Order.asc("timestamp")));
+			
+		List<IntradayPrice> prices = template.find(query, IntradayPrice.class, "intraday-prices");
+		
+		IntradayChartData data = new IntradayChartData();
+		data.setSymbol(symbol);
+		data.setTradeDate(date);
+		data.setPrevious(previous);
+		data.setQuote(prices);
+				
+		return ServerResponse
+				.ok()
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(data);		
+	}
+	
+	public Mono<ServerResponse> intradayDeltaDemo(ServerRequest request) {
+		Optional<String> optSymbol = request.queryParam("symbol");
 		Optional<String> optSince = request.queryParam("since");
 		
 		if (optSymbol.isEmpty()) {
@@ -119,25 +181,12 @@ public class StockQuoteHandler {
 					.bodyValue("parameter symbol is missing");
 		}
 		
-		if (optDate.isEmpty() && optSince.isEmpty()) {
+		LocalDateTime since = null;
+		if (optSince.isEmpty()) {
 			return ServerResponse
 					.status(HttpStatus.BAD_REQUEST)
 					.bodyValue("either date or since parameter should be provided");
-		}
-		
-		LocalDate date = null;
-		if (optDate.isPresent()) {
-			try {
-				date = LocalDate.parse(optDate.get(),DateTimeFormatter.ISO_LOCAL_DATE);
-			} catch (DateTimeParseException e) {
-				return ServerResponse
-						.status(HttpStatus.BAD_REQUEST)
-						.bodyValue("invalid format for date parameter '" + optDate.get() + "', should be in yyyy-mm-dd format");				
-			}
-		}
-
-		LocalDateTime since = null;
-		if (optSince.isPresent()) {
+		} else {
 			try {
 				since = LocalDateTime.parse(optSince.get(),DateTimeFormatter.ISO_DATE_TIME);
 			} catch (DateTimeParseException e) {
@@ -149,25 +198,18 @@ public class StockQuoteHandler {
 		
 		String symbol = optSymbol.get().toLowerCase();
 		
-		LocalDateTime from;
-		if (date!=null) {
-			from = LocalDateTime.of(date, LocalTime.of(9,30));
-		} else {
-			from = LocalDateTime.of(since.toLocalDate(), LocalTime.of(9,30));
-		}
+		LocalDateTime from = LocalDateTime.of(since.toLocalDate(), LocalTime.of(9,30));
 
 		LocalTime now = LocalTime.now();
 		int interval = (now.getMinute()*60 + now.getSecond())%600;
 		long mins = (long)Math.ceil((390d/600d)*interval);
 		LocalDateTime to = from.plusMinutes(mins);
 
-		if (since!=null) {
-			from = since;
-		}
+		from = since;
 		
-		log.info("{} : {} - {}",symbol,from,to);
+		//log.info("{} : {} - {}",symbol,from,to);
 		
-		Query query = query(where("symbol").is(symbol).and("timestamp").gte(from).lte(to)).with(Sort.by(Order.asc("timestamp")));
+		Query query = query(where("symbol").is(symbol).and("timestamp").gt(from).lte(to)).with(Sort.by(Order.asc("timestamp")));
 			
 		List<IntradayPrice> intraday = template.find(query, IntradayPrice.class, "intraday-prices");
 		

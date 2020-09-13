@@ -21,15 +21,23 @@ public class WebFluxConfig implements WebFluxConfigurer {
 		  .allowedOrigins("*")
 		  .allowedMethods("GET");
 		registry
-		  .addMapping("/quote-simulate")
+		  .addMapping("/quote-demo")
 		  .allowedOrigins("*")
-		  .allowedMethods("GET");			
+		  .allowedMethods("GET");
+		registry
+		  .addMapping("/intraday-init-demo")
+		  .allowedOrigins("*")
+		  .allowedMethods("GET");
+		registry
+		  .addMapping("/intraday-delta-demo")
+		  .allowedOrigins("*")
+		  .allowedMethods("GET");
 		registry
 		  .addMapping("/previous")
 		  .allowedOrigins("*")
 		  .allowedMethods("GET");		
 		registry
-		  .addMapping("/intraday")
+		  .addMapping("/intraday-demo")
 		  .allowedOrigins("*")
 		  .allowedMethods("GET");
 	}

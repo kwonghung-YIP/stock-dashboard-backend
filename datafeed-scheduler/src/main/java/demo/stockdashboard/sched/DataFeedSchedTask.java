@@ -102,7 +102,7 @@ public class DataFeedSchedTask {
 			.forEach(symbol -> {
 
 				//IEXPrevious iexPrevious = iexWrapper.previous(symbol);
-				IEXHistoricalPrice[] iexHisorical = iexWrapper.historicalPrice(symbol,LocalDate.of(2020,9,4));
+				IEXHistoricalPrice[] iexHisorical = iexWrapper.historicalPrice(symbol,LocalDate.of(2020,9,3));
 				
 				if (iexHisorical != null && iexHisorical.length > 0) {
 					PreviousQuote prev = new PreviousQuote();
