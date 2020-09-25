@@ -85,7 +85,7 @@ public class DataFeedSchedTask {
 					Optional<IEXQuote> result = template
 						.update(IEXQuote.class)
 						.inCollection("quote")
-						.matching(query(where("symbol").is(symbol.toUpperCase())))
+						.matching(query(where("symbol").regex("^"+symbol+"$", "i")))
 						.replaceWith(quote)
 						.withOptions(FindAndReplaceOptions.options().upsert().returnNew())
 						.findAndReplace();
@@ -102,7 +102,7 @@ public class DataFeedSchedTask {
 			.forEach(symbol -> {
 
 				//IEXPrevious iexPrevious = iexWrapper.previous(symbol);
-				IEXHistoricalPrice[] iexHisorical = iexWrapper.historicalPrice(symbol,LocalDate.of(2020,9,3));
+				IEXHistoricalPrice[] iexHisorical = iexWrapper.historicalPrice(symbol,LocalDate.of(2020,9,24));
 				
 				if (iexHisorical != null && iexHisorical.length > 0) {
 					PreviousQuote prev = new PreviousQuote();
@@ -128,7 +128,7 @@ public class DataFeedSchedTask {
 			.stream()
 			.forEach(symbol -> {
 				log.info("Get intraday-price for {} ...",symbol);
-				IEXIntradayPrice[] iexIntradayPrices = iexWrapper.intradayPrices(symbol,LocalDate.of(2020,9,4));
+				IEXIntradayPrice[] iexIntradayPrices = iexWrapper.intradayPrices(symbol,LocalDate.of(2020,9,24));
 				
 				/*template
 				  .getCollectionNames()
