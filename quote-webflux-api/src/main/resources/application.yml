@@ -1,0 +1,17 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb+srv://${mongodb-altas.login}:${mongodb-altas.passwd}@${mongodb-altas.cluster-domain}/stock?retryWrites=true&w=majority
+
+logging:
+  level:
+    org.springframework.data.mongodb: info
+      
+server:
+  http2:
+    enabled: true  
+  ssl: 
+    key-store: classpath:my-service.p12
+    key-store-type: PKCS12
+    key-store-password: abcd1234
+    key-alias: my-cert      
