@@ -38,7 +38,7 @@ import reactor.core.publisher.Mono;
 public class StockQuoteHandler {
 	
 	@Autowired
-	private MongoTemplate template;
+	private MongoTemplate mongoTemplate;
 
 	@Autowired
 	private CompanyProfileRepo companyRepo;
@@ -96,7 +96,7 @@ public class StockQuoteHandler {
 		
 		Query query = query(where("symbol").regex("^"+symbol+"$", "i").and("date").is(date));
 		
-		PreviousQuote previous = template.findOne(query, PreviousQuote.class, "previous");
+		PreviousQuote previous = mongoTemplate.findOne(query, PreviousQuote.class, "previous");
 		if (previous!=null) {
 			return ServerResponse
 					.ok()
@@ -139,7 +139,7 @@ public class StockQuoteHandler {
 		
 		Query prevQuery = query(where("symbol").is(symbol).and("date").lt(date)).with(Sort.by(Order.desc("date"))).limit(1);
 		
-		PreviousQuote previous = template.findOne(prevQuery, PreviousQuote.class, "previous");
+		PreviousQuote previous = mongoTemplate.findOne(prevQuery, PreviousQuote.class, "previous");
 		
 		if (previous==null) {
 			return ServerResponse
@@ -157,7 +157,7 @@ public class StockQuoteHandler {
 		
 		Query query = query(where("symbol").is(symbol).and("timestamp").gte(from).lte(to)).with(Sort.by(Order.asc("timestamp")));
 			
-		List<IntradayPrice> prices = template.find(query, IntradayPrice.class, "intraday-prices");
+		List<IntradayPrice> prices = mongoTemplate.find(query, IntradayPrice.class, "intraday-prices");
 		
 		IntradayChartData data = new IntradayChartData();
 		data.setSymbol(symbol);
@@ -185,7 +185,7 @@ public class StockQuoteHandler {
 		if (optSince.isEmpty()) {
 			return ServerResponse
 					.status(HttpStatus.BAD_REQUEST)
-					.bodyValue("either date or since parameter should be provided");
+					.bodyValue("since parameter should be provided");
 		} else {
 			try {
 				since = LocalDateTime.parse(optSince.get(),DateTimeFormatter.ISO_DATE_TIME);
@@ -211,7 +211,7 @@ public class StockQuoteHandler {
 		
 		Query query = query(where("symbol").is(symbol).and("timestamp").gt(from).lte(to)).with(Sort.by(Order.asc("timestamp")));
 			
-		List<IntradayPrice> intraday = template.find(query, IntradayPrice.class, "intraday-prices");
+		List<IntradayPrice> intraday = mongoTemplate.find(query, IntradayPrice.class, "intraday-prices");
 		
 		//long count = template.count(query, IntradayPrice.class, "intraday-prices");
 		
@@ -255,7 +255,7 @@ public class StockQuoteHandler {
 		String symbol = optSymbol.get();
 		Query query = query(where("symbol").regex("^"+symbol+"$", "i").and("date").is(date));
 		
-		PreviousQuote previous = template.findOne(query, PreviousQuote.class, "previous");
+		PreviousQuote previous = mongoTemplate.findOne(query, PreviousQuote.class, "previous");
 		if (previous!=null) {
 			Quote quote = new Quote();
 			BeanUtils.copyProperties(previous, quote);
