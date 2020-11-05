@@ -4,7 +4,7 @@ Stock Quote Dashboard is a end-to-end demo for how to boost the network throughp
 
 ![Architecture](/architecture.png)
 
-This repo contains 4 maven modules
+This repo contains 4 maven sub-modules
 * quote-webflux-api - the Embedded Netty backend to query the market data cached in MongoDB Altas.
 * datafeed-scheduler - the schedule job to get market data from IEX Cloud API and write it into MongoDB Altas as cache. 
 * core-domain-library - the pojo and other common library to share among both above modules
